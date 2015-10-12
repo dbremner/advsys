@@ -26,7 +26,7 @@ int datafd;	/* data file descriptor */
 extern jmp_buf restart;
 
 /* external routines */
-extern char *malloc();
+#include <stdlib.h>
 
 /* table base addresses */
 char *wtable;	/* word table */
@@ -53,8 +53,7 @@ static char *save;	/* save area base address */
 static int slen;	/* save area length */
 
 /* db_init - read and decode the data file header */
-db_init(name)
-  char *name;
+void db_init(char *name)
 {
     int woff,ooff,aoff,voff,n;
     char fname[50];
@@ -140,21 +139,19 @@ db_init(name)
 }
 
 /* db_save - save the current database */
-db_save(name)
-  char *name;
+int db_save(char *name)
 {
     return (advsave(&hdr[HDR_ANAME],20,save,slen) ? T : NIL);
 }
 
 /* db_restore - restore a saved database */
-int db_restore(name)
-  char *name;
+int db_restore(char *name)
 {
     return (advrestore(&hdr[HDR_ANAME],20,save,slen) ? T : NIL);
 }
 
 /* db_restart - restart the current game */
-db_restart()
+int db_restart(void)
 {
     lseek(datafd,saveoff,0);
     if (read(datafd,save,slen) != slen)
@@ -165,16 +162,14 @@ db_restart()
 }
 
 /* complement - complement a block of memory */
-complement(adr,len)
-  char *adr; int len;
+void complement(char *adr, int len)
 {
     for (; len--; adr++)
 	*adr = ~(*adr + 30);
 }
 
 /* findword - find a word in the dictionary */
-int findword(word)
-  char *word;
+int findword(char *word)
 {
     char sword[WRDSIZE+1];
     int wrd,i;
@@ -192,15 +187,13 @@ int findword(word)
 }
 
 /* wtype - return the type of a word */
-int wtype(wrd)
-  int wrd;
+int wtype(int wrd)
 {
     return (wtypes[wrd]);
 }
 
 /* match - match an object against a name and list of adjectives */
-int match(obj,noun,adjs)
-  int obj,noun,*adjs;
+int match(int obj, int noun, int *adjs)
 {
     int *aptr;
 
@@ -213,8 +206,7 @@ int match(obj,noun,adjs)
 }
 
 /* checkverb - check to see if this is a valid verb */
-int checkverb(verbs)
-  int *verbs;
+int checkverb(int *verbs)
 {
     int act;
 
@@ -226,8 +218,7 @@ int checkverb(verbs)
 }
 
 /* findaction - find an action matching a description */
-findaction(verbs,preposition,flag)
-  int *verbs,preposition,flag;
+int findaction(int *verbs, int preposition, int flag)
 {
     int act,mask;
 
@@ -245,8 +236,7 @@ findaction(verbs,preposition,flag)
 }
 
 /* getp - get the value of an object property */
-int getp(obj,prop)
-  int obj,prop;
+int getp(int obj, int prop)
 {
     int p;
 
@@ -257,8 +247,7 @@ int getp(obj,prop)
 }
 
 /* setp - set the value of an object property */
-int setp(obj,prop,val)
-  int obj,prop,val;
+int setp(int obj, int prop, int val)
 {
     int p;
 
@@ -269,8 +258,7 @@ int setp(obj,prop,val)
 }
 
 /* findprop - find a property */
-int findprop(obj,prop)
-  int obj,prop;
+int findprop(int obj, int prop)
 {
     int n,i,p;
 
@@ -282,8 +270,7 @@ int findprop(obj,prop)
 }
 
 /* hasnoun - check to see if an object has a specified noun */
-int hasnoun(obj,noun)
-  int obj,noun;
+int hasnoun(int obj, int noun)
 {
     while (obj) {
 	if (inlist(getofield(obj,O_NOUNS),noun))
@@ -294,8 +281,7 @@ int hasnoun(obj,noun)
 }
 
 /* hasadjective - check to see if an object has a specified adjective */
-int hasadjective(obj,adjective)
-  int obj,adjective;
+int hasadjective(int obj, int adjective)
 {
     while (obj) {
 	if (inlist(getofield(obj,O_ADJECTIVES),adjective))
@@ -306,8 +292,7 @@ int hasadjective(obj,adjective)
 }
 
 /* hasverb - check to see if this action has this verb */
-int hasverb(act,verbs)
-  int act,*verbs;
+int hasverb(int act, int *verbs)
 {
     int link,word,*verb;
 
@@ -332,15 +317,13 @@ int hasverb(act,verbs)
 }
 
 /* haspreposition - check to see if an action has a specified preposition */
-int haspreposition(act,preposition)
-  int act,preposition;
+int haspreposition(int act, int preposition)
 {
     return (inlist(getafield(act,A_PREPOSITIONS),preposition));
 }
 
 /* inlist - check to see if a word is an element of a list */
-int inlist(link,word)
-  int link,word;
+int inlist(int link, int word)
 {
     while (link != NIL) {
 	if (word == getword(link+L_DATA))
@@ -351,36 +334,31 @@ int inlist(link,word)
 }
 
 /* getofield - get a field from an object */
-int getofield(obj,off)
-  int obj,off;
+int getofield(int obj, int off)
 {
     return (getword(getoloc(obj)+off));
 }
 
 /* putofield - put a field into an object */
-int putofield(obj,off,val)
-  int obj,off,val;
+int putofield(int obj, int off, int val)
 {
     return (putword(getoloc(obj)+off,val));
 }
 
 /* getafield - get a field from an action */
-int getafield(act,off)
-  int act,off;
+int getafield(int act, int off)
 {
     return (getword(getaloc(act)+off));
 }
 
 /* getabyte - get a byte field from an action */
-int getabyte(act,off)
-  int act,off;
+int getabyte(int act, int off)
 {
     return (getbyte(getaloc(act)+off));
 }
 
 /* getoloc - get an object from the object table */
-int getoloc(n)
-  int n;
+int getoloc(int n)
 {
     if (n < 1 || n > ocount)
 	nerror("object number out of range: %d",n);
@@ -388,8 +366,7 @@ int getoloc(n)
 }
 
 /* getaloc - get an action from the action table */
-int getaloc(n)
-  int n;
+int getaloc(int n)
 {
     if (n < 1 || n > acount)
 	nerror("action number out of range: %d",n);
@@ -397,8 +374,7 @@ int getaloc(n)
 }
 
 /* getvalue - get the value of a variable from the variable table */
-int getvalue(n)
-  int n;
+int getvalue(int n)
 {
     if (n < 1 || n > vcount)
 	nerror("variable number out of range: %d",n);
@@ -406,8 +382,7 @@ int getvalue(n)
 }
 
 /* setvalue - set the value of a variable in the variable table */
-int setvalue(n,v)
-  int n,v;
+int setvalue(int n, int v)
 {
     if (n < 1 || n > vcount)
 	nerror("variable number out of range: %d",n);
@@ -415,8 +390,7 @@ int setvalue(n,v)
 }
 
 /* getwloc - get a word from the word table */
-int getwloc(n)
-  int n;
+int getwloc(int n)
 {
     if (n < 1 || n > wcount)
 	nerror("word number out of range: %d",n);
@@ -424,58 +398,50 @@ int getwloc(n)
 }
 
 /* getword - get a word from the data array */
-int getword(n)
-  int n;
+int getword(int n)
 {
     return (getdword(base+n));
 }
 
 /* putword - put a word into the data array */
-int putword(n,w)
-  int n,w;
+int putword(int n, int w)
 {
     return (putdword(base+n,w));
 }
 
 /* getbyte - get a byte from the data array */
-int getbyte(n)
-  int n;
+int getbyte(int n)
 {
     return (*(base+n) & 0xFF);
 }
 
 /* getcbyte - get a code byte */
-int getcbyte(n)
-  int n;
+int getcbyte(int n)
 {
     return (*(cbase+n) & 0xFF);
 }
 
 /* getcword - get a code word */
-int getcword(n)
-  int n;
+int getcword(int n)
 {
     return (getdword(cbase+n));
 }
 
 /* getdword - get a word from the data array */
-int getdword(p)
-  char *p;
+int getdword(char *p)
 {
     return (((*p & 0xFF) | (*(p+1) << 8))&0xFFFF);
 }
 
 /* putdword - put a word into the data array */
-int putdword(p,w)
-  char *p; int w;
+int putdword(char *p, int w)
 {
     *p = w; *(p+1) = w >> 8;
     return (w);
 }
 
 /* nerror - handle errors with numeric arguments */
-nerror(fmt,n)
-  char *fmt; int n;
+void nerror(char *fmt, int n)
 {
     char buf[100];
     sprintf(buf,fmt,n);

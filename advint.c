@@ -21,9 +21,12 @@ extern int h_before;
 extern int h_after;
 extern int h_error;
 
+void play(void);
+int single(void);
+void error(char *msg);
+
 /* main - the main routine */
-main(argc,argv)
-  int argc; char *argv[];
+int main(int argc,char *argv[])
 {
     char *fname,*lname;
     int rows,cols,i;
@@ -63,7 +66,7 @@ main(argc,argv)
 	    fname = argv[i];
     if (fname == NULL) {
 	printf("usage: advint [-r<rows>] [-c<columns>] [-l<log-file>] <file>\n");
-	exit();
+	exit(EXIT_FAILURE);
     }
 #endif
 
@@ -75,10 +78,11 @@ main(argc,argv)
 
     /* play the game */
     play();
+    return 0;
 }
 
 /* play - the main loop */
-play()
+void play(void)
 {
     /* establish the restart point */
     setjmp(restart);
@@ -106,7 +110,7 @@ play()
 }
 
 /* single - handle a single action */
-int single()
+int single(void)
 {
     /* execute the before code */
     switch (execute(h_before)) {
@@ -124,10 +128,9 @@ int single()
 }
 
 /* error - print an error message and exit */
-error(msg)
-  char *msg;
+void error(char *msg)
 {
     trm_str(msg);
     trm_chr('\n');
-    exit();
+    exit(EXIT_FAILURE);
 }

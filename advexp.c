@@ -9,7 +9,7 @@
 #include "advdbs.h"
 
 /* external routines */
-extern SYMBOL *sfind();
+extern SYMBOL *sfind(char *name);
 
 /* external variables */
 extern char t_token[];
@@ -19,8 +19,34 @@ extern char *code;
 extern int cptr;
 
 /* forward declarations */
-int do_cond(),do_and(),do_or(),do_if(),do_while(),do_progn();
-int do_setq(),do_return(),do_send(),do_sndsuper();
+void do_nary(int op, int n);
+void do_literal(void);
+void do_identifier(void);
+void do_call(void);
+void do_cond(void);
+void do_and(void);
+void do_or(void);
+void do_if(void);
+void do_while(void);
+void do_progn(void);
+void do_setq(void);
+void do_return(void);
+void do_send(void);
+void do_sndsuper(void);
+
+
+void code_argument(int n);
+void code_setargument(int n);
+void code_temporary(int n);
+void code_settemporary(int n);
+void code_variable(int n);
+void code_setvariable(int n);
+void code_literal(int n);
+
+void fixup(int chn, int val);
+
+
+void sender(void);
 
 /* opcode tables */
 static struct { char *nt_name; int nt_code,nt_args; } *nptr,ntab[] = {
@@ -71,7 +97,7 @@ static struct { char *ft_name; int (*ft_fcn)(); } *fptr,ftab[] = {
 };
 
 /* do_expr - compile a subexpression */
-do_expr()
+void do_expr(void)
 {
     int tkn;
 
@@ -101,7 +127,7 @@ do_expr()
 }
 
 /* in_ntab - check for a function in ntab */
-int in_ntab()
+int in_ntab(void)
 {
     for (nptr = ntab; nptr->nt_name; ++nptr)
 	if (strcmp(t_token,nptr->nt_name) == 0) {
@@ -112,7 +138,7 @@ int in_ntab()
 }
 
 /* in_ftab - check for a function in ftab */
-int in_ftab()
+int in_ftab(void)
 {
     for (fptr = ftab; fptr->ft_name; ++fptr)
 	if (strcmp(t_token,fptr->ft_name) == 0) {
@@ -123,7 +149,7 @@ int in_ftab()
 }
 
 /* do_cond - compile the (COND ... ) expression */
-do_cond()
+void do_cond(void)
 {
     int tkn,nxt,end;
 
@@ -153,7 +179,7 @@ do_cond()
 }
 
 /* do_and - compile the (AND ... ) expression */
-do_and()
+void do_and(void)
 {
     int tkn,end;
 
@@ -176,7 +202,7 @@ do_and()
 }
 
 /* do_or - compile the (OR ... ) expression */
-do_or()
+void do_or(void)
 {
     int tkn,end;
 
@@ -199,7 +225,7 @@ do_or()
 }
 
 /* do_if - compile the (IF ... ) expression */
-do_if()
+void do_if(void)
 {
     int tkn,nxt,end;
 
@@ -229,7 +255,7 @@ do_if()
 }
 
 /* do_while - compile the (WHILE ... ) expression */
-do_while()
+void do_while(void)
 {
     int tkn,nxt,end;
 
@@ -256,7 +282,7 @@ do_while()
 }
 
 /* do_progn - compile the (PROGN ... ) expression */
-do_progn()
+void do_progn(void)
 {
     int tkn,n;
 
@@ -272,7 +298,7 @@ do_progn()
 }
 
 /* do_setq - compile the (SETQ v x) expression */
-do_setq()
+void do_setq(void)
 {
     char name[TKNSIZE+1];
     int n;
@@ -297,7 +323,7 @@ do_setq()
 }
 
 /* do_return - handle the (RETURN [expr]) expression */
-do_return()
+void do_return(void)
 {
     int tkn;
 
@@ -317,7 +343,7 @@ do_return()
 }
 
 /* do_send - handle the (SEND obj msg [expr]...) expression */
-do_send()
+void do_send(void)
 {
     /* start searching for the method at the object itself */
     putcbyte(OP_NIL);
@@ -331,7 +357,7 @@ do_send()
 }
 
 /* do_sndsuper - handle the (SEND-SUPER msg [expr]...) expression */
-do_sndsuper()
+void do_sndsuper(void)
 {
     /* start searching for the method at the current class object */
     code_literal(curobj);
@@ -345,7 +371,7 @@ do_sndsuper()
 }
 
 /* sender - compile an expression to send a message to an object */
-sender()
+void sender(void)
 {
     int tkn,n;
     
@@ -364,7 +390,7 @@ sender()
 }
 
 /* do_call - compile a function call */
-do_call()
+void do_call(void)
 {
     int tkn,n;
     
@@ -382,8 +408,7 @@ do_call()
 }
 
 /* do_nary - compile nary operator expressions */
-do_nary(op,n)
-  int op,n;
+void do_nary(int op, int n)
 {
     while (n--) {
 	do_expr();
@@ -394,13 +419,13 @@ do_nary(op,n)
 }
 
 /* do_literal - compile a literal */
-do_literal()
+void do_literal(void)
 {
     code_literal(t_value);
 }
 
 /* do_identifier - compile an identifier */
-do_identifier()
+void do_identifier(void)
 {
     SYMBOL *sym;
     int n;
@@ -424,40 +449,35 @@ do_identifier()
 }
 
 /* code_argument - compile an argument reference */
-code_argument(n)
-  int n;
+void code_argument(int n)
 {
     putcbyte(OP_ARG);
     putcbyte(n);
 }
 
 /* code_setargument - compile a set argument reference */
-code_setargument(n)
-  int n;
+void code_setargument(int n)
 {
     putcbyte(OP_ASET);
     putcbyte(n);
 }
 
 /* code_temporary - compile an temporary reference */
-code_temporary(n)
-  int n;
+void code_temporary(int n)
 {
     putcbyte(OP_TMP);
     putcbyte(n);
 }
 
 /* code_settemporary - compile a set temporary reference */
-code_settemporary(n)
-  int n;
+void code_settemporary(int n)
 {
     putcbyte(OP_TSET);
     putcbyte(n);
 }
 
 /* code_variable - compile a variable reference */
-code_variable(n)
-  int n;
+void code_variable(int n)
 {
     if (n < 32)
 	putcbyte(OP_XVAR+n);
@@ -468,8 +488,7 @@ code_variable(n)
 }
 
 /* code_setvariable - compile a set variable reference */
-code_setvariable(n)
-  int n;
+void code_setvariable(int n)
 {
     if (n < 32)
 	putcbyte(OP_XSET+n);
@@ -480,8 +499,7 @@ code_setvariable(n)
 }
 
 /* code_literal - compile a literal reference */
-code_literal(n)
-  int n;
+void code_literal(int n)
 {
     if (n >= 0 && n < 64)
 	putcbyte(OP_XPLIT+n);
@@ -496,16 +514,14 @@ code_literal(n)
 }
 
 /* do_op - insert an opcode and look for closing paren */
-do_op(op)
-  int op;
+void do_op(int op)
 {
     putcbyte(op);
     frequire(T_CLOSE);
 }
 
 /* putcbyte - put a code byte into data space */
-int putcbyte(b)
-  int b;
+int putcbyte(int b)
 {
     if (cptr < CMAX)
 	code[cptr++] = b;
@@ -515,8 +531,7 @@ int putcbyte(b)
 }
 
 /* putcword - put a code word into data space */
-int putcword(w)
-  int w;
+int putcword(int w)
 {
     putcbyte(w);
     putcbyte(w >> 8);
@@ -524,8 +539,7 @@ int putcword(w)
 }
 
 /* fixup - fixup a reference chain */
-fixup(chn,val)
-  int chn,val;
+void fixup(int chn, int val)
 {
     int hval,nxt;
 

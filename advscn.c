@@ -40,8 +40,12 @@ static int save_lnum;	/* saved lnum */
 static FILE *save_ifp;	/* saved ifp */
 static int scnt;	/* count of characters in string */
 
+void wputc(int ch);
+void strdone(void);
+int skipspaces(void);
+
 /* sinit - initialize the scanner */
-sinit()
+void sinit(void)
 {
     /* setup the line buffer */
     lptr = line; *lptr = 0;
@@ -59,7 +63,7 @@ sinit()
 }
 
 /* token - get the next token */
-int token()
+int token(void)
 {
     int tkn;
 
@@ -71,14 +75,13 @@ int token()
 }
 
 /* stoken - save a token */
-stoken(tkn)
-  int tkn;
+void stoken(int tkn)
 {
     savetkn = tkn;
 }
 
 /* rtoken - read the next token */
-int rtoken()
+int rtoken(void)
 {
     int ch;
 
@@ -95,7 +98,7 @@ int rtoken()
 }
 
 /* getstring - get a string */
-int getstring()
+int getstring(void)
 {
     int ch,sflag;
 
@@ -123,8 +126,7 @@ int getstring()
 }
 
 /* getid - get an identifier */
-int getid(ch)
-  int ch;
+int getid(int ch)
 {
     char *p;
 
@@ -137,8 +139,7 @@ int getid(ch)
 }
 
 /* isnumber - check if this string is a number */
-int isnumber(str,pval)
-  char *str; int *pval;
+int isnumber(char *str, int *pval)
 {
     int digits;
     char *p;
@@ -165,15 +166,14 @@ int isnumber(str,pval)
 }
 
 /* wputc - put a character into the output file */
-wputc(ch)
-  int ch;
+void wputc(int ch)
 {
     ad_putc(encode(ch));
     scnt++;
 }
 
 /* strdone - finish a string */
-strdone()
+void strdone(void)
 {
     wputc('\0');
     while (scnt & 3)
@@ -182,7 +182,7 @@ strdone()
 }
 
 /* skipspaces - skip leading spaces */
-skipspaces()
+int skipspaces(void)
 {
     int ch;
 
@@ -192,14 +192,13 @@ skipspaces()
 }
 
 /* isidchar - is this an identifier character */
-int isidchar(ch)
-  int ch;
+int isidchar(int ch)
 {
     return (!isspace(ch) && ch != '(' && ch != ')' && ch != '"');
 }
 
 /* getch - get the next character */
-int getch()
+int getch(void)
 {
     FILE *fp;
     int ch;
@@ -232,7 +231,7 @@ int getch()
 	    strcpy(fname,&line[1]); fname[strlen(fname)-1] = 0;
 	    if ((fp = fopen(fname,"r")) == NULL) {
 		printf("Can't open include file: %s\n",fname);
-		exit();
+		exit(EXIT_FAILURE);
 	    }
 	    printf("[ including %s ]\n",fname);
 
@@ -269,7 +268,7 @@ int getch()
 }
 
 /* getchr - get a character checking for end of file */
-int getchr()
+int getchr(void)
 {
     int ch;
 
@@ -291,15 +290,13 @@ int getchr()
 }
 
 /* encode - encode a single character */
-int encode(ch)
-  int ch;
+int encode(int ch)
 {
     return ((ch - 30) & 0xFF);
 }
 
 /* error - report an error in the current line */
-error(msg)
-  char *msg;
+void error(char *msg)
 {
     char *p;
 
@@ -317,8 +314,7 @@ error(msg)
 }
 
 /* xerror - report an error in the current line */
-xerror(msg)
-  char *msg;
+void xerror(char *msg)
 {
     printf(">>> %s <<<\n",msg);
     errcount++;

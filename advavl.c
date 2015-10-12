@@ -5,16 +5,16 @@
 	All rights reserved
 */
 
+#include <stdlib.h>
+#include <string.h>
 #include "advavl.h"
 #include "advdbs.h"
 
 #define TRUE	1
 #define FALSE	0
-#define NULL	0
 
 /* external routines */
-extern char *save();
-extern char *malloc();
+extern char *save(char *s);
 
 /* external variables */
 extern char *data;
@@ -25,8 +25,10 @@ extern int dptr;
 static TREE *curtree;
 static char thiskey[WRDSIZE+1];
 
+int tfind1(TNODE *node);
+
 /* tnew - allocate a new avl tree */
-TREE *tnew()
+TREE *tnew(void)
 {
     TREE *tree;
 
@@ -43,8 +45,7 @@ TREE *tnew()
 }
 
 /* tenter - add an entry to an avl tree */
-int tenter(tree,key)
-  TREE *tree; char *key;
+int tenter(TREE *tree, char *key)
 {
     int h;
     curtree = tree;
@@ -53,8 +54,7 @@ int tenter(tree,key)
 }
 
 /* tenter1 - internal insertion routine */
-int tenter1(pnode,ph)
-  TNODE **pnode; int *ph;
+int tenter1(TNODE *pnode, int *ph)
 {
     TNODE *p,*q,*r;
     int val,c;
@@ -162,16 +162,14 @@ int tenter1(pnode,ph)
 }
 
 /* tfind - find an entry in an avl tree */
-int tfind(tree,key)
-  TREE *tree; char *key;
+int tfind(TREE *tree, char *key)
 {
     strncpy(thiskey,key,WRDSIZE); thiskey[WRDSIZE] = 0;
     return (tfind1(tree->tr_root));
 }
 
 /* tfind1 - internal lookup routine */
-int tfind1(node)
-  TNODE *node;
+int tfind1(TNODE *node)
 {
     int c;
 

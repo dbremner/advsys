@@ -58,9 +58,10 @@ int h_after;		/* after handler code */
 int h_error;		/* error handling code */
 
 /* external routines */
-extern char *malloc();
-extern char *calloc();
-extern TREE *tnew();
+extern TREE *tnew(void);
+
+//advscn.c
+extern void sinit(void);
 
 /* external variables */
 extern int errcount;	/* error count */
@@ -70,13 +71,26 @@ extern char *t_names[];	/* token names */
 extern long ad_foff;	/* data file offset */
 
 /* forward declarations */
-SYMBOL *sfind();
-SYMBOL *senter();
-char *save();
+SYMBOL *sfind(char *name);
+SYMBOL *senter(char *name, int type, int value);
+char *save(char *s);
+
+void undef_object(int n);
+void str_out(char *str, int len);
+void word_out(int dat);
+void byte_out(int dat);
+void center(char *name, int value);
+void output(void);
+void woutput(TNODE *node);
+void wtoutput(TNODE *node);
+
+
+void frequire(int rtkn);
+void require(int tkn, int rtkn);
+void fail(char *msg);
 
 /* main - the main routine */
-main(argc,argv)
-  int argc; char *argv[];
+int main(int argc, char *argv[])
 {
     int tkn,obj,i;
 
@@ -208,7 +222,7 @@ main(argc,argv)
 }
 
 /* getvalue - get a value */
-int getvalue()
+int getvalue(void)
 {
     SYMBOL *sym;
 
@@ -224,8 +238,7 @@ int getvalue()
 }
 
 /* dalloc - allocate data space */
-int dalloc(size)
-  int size;
+int dalloc(int size)
 {
     if ((dptr += size) > DMAX)
 	fail("out of data space");
@@ -233,8 +246,7 @@ int dalloc(size)
 }
 
 /* add_word - add a word to the dictionary */
-int add_word(str,type)
-  char *str; int type;
+int add_word(char *str, int type)
 {
     if ((curwrd = tfind(words,str)) == NIL) {
 	if (wcnt < WMAX) {
@@ -255,44 +267,39 @@ int add_word(str,type)
 }
 
 /* add_synonym - add a synonym to a word */
-int add_synonym(str,wrd)
-  char *str; int wrd;
+int add_synonym(char *str, int wrd)
 {
     curwrd = wrd;
     return (tenter(words,str));
 }
 
 /* getword - get a word from an object field */
-int getword(off)
-  int off;
+int getword(int off)
 {
     return ((data[off] & 0xFF) | (data[off+1] << 8));
 }
 
 /* putword - put a word into an object field */
-putword(off,dat)
-  int off,dat;
+void putword(int off, int dat)
 {
     data[off] = dat;
     data[off+1] = dat >> 8;
 }
 
 /* getbyte - get a byte from an object field */
-int getbyte(off)
-  int off;
+int getbyte(int off)
 {
     return (data[off]);
 }
 
 /* putbyte - put a byte into an object field */
-putbyte(off,dat)
-  int off,dat;
+void putbyte(int off, int dat)
 {
     data[off] = dat;
 }
 
 /* output - output the binary data structures */
-output()
+void output(void)
 {
     int woff,wsize;	/* word table offset and size */
     int ooff,osize;	/* object table offset and size */
@@ -419,8 +426,7 @@ output()
 }
 
 /* woutput - output the word data */
-woutput(node)
-  TNODE *node;
+void woutput(TNODE *node)
 {
     int wnum,wrd;
 
@@ -437,8 +443,7 @@ woutput(node)
 }
 
 /* wtoutput - output the word table */
-wtoutput(node)
-  TNODE *node;
+void wtoutput(TNODE *node)
 {
     if (node) {
 	wtoutput(LLINK(node));
@@ -448,8 +453,7 @@ wtoutput(node)
 }
 
 /* undef_object - complain about an undefined object */
-undef_object(n)
-  int n;
+void undef_object(int n)
 {
     char msg[100];
     SYMBOL *sym;
@@ -463,31 +467,27 @@ undef_object(n)
 }
 
 /* str_out - output a string */
-str_out(str,len)
-  char *str; int len;
+void str_out(char *str, int len)
 {
     while (len--)
 	byte_out(*str++);
 }
 
 /* word_out - output a word */
-word_out(dat)
-  int dat;
+void word_out(int dat)
 {
     byte_out(dat);
     byte_out(dat >> 8);
 }
 
 /* byte_out - output a byte */
-byte_out(dat)
-  int dat;
+void byte_out(int dat)
 {
     ad_putc((~dat - 30) & 0xFF);
 }
 
 /* oenter - enter an object into the symbol table */
-int oenter(name)
-  char *name;
+int oenter(char *name)
 {
     SYMBOL *sym;
 
@@ -506,8 +506,7 @@ int oenter(name)
 }
 
 /* ofind - find an object in the symbol table */
-int ofind(name)
-  char *name;
+int ofind(char *name)
 {
     SYMBOL *sym;
 
@@ -520,8 +519,7 @@ int ofind(name)
 }
 
 /* aenter - enter an action into the symbol table */
-int aenter(name)
-  char *name;
+int aenter(char *name)
 {
     SYMBOL *sym;
 
@@ -540,8 +538,7 @@ int aenter(name)
 }
 
 /* venter - enter a variable into the symbol table */
-int venter(name)
-  char *name;
+int venter(char *name)
 {
     SYMBOL *sym;
 
@@ -555,8 +552,7 @@ int venter(name)
 }
 
 /* penter - enter a property into the symbol table */
-int penter(name)
-  char *name;
+int penter(char *name)
 {
     SYMBOL *sym;
 
@@ -570,8 +566,7 @@ int penter(name)
 }
 
 /* center - enter a constant into the symbol table */
-center(name,value)
-  char *name; int value;
+void center(char *name, int value)
 {
     if (sfind(name)) {
 	error("Already defined");
@@ -581,8 +576,7 @@ center(name,value)
 }
 
 /* sfind - find a symbol in the symbol table */
-SYMBOL *sfind(name)
-  char *name;
+SYMBOL *sfind(char *name)
 {
     SYMBOL *sym;
 
@@ -593,8 +587,7 @@ SYMBOL *sfind(name)
 }
 
 /* senter - enter a symbol into the symbol table */
-SYMBOL *senter(name,type,value)
-  char *name; int type,value;
+SYMBOL *senter(char *name, int type, int value)
 {
     SYMBOL *sym;
 
@@ -609,15 +602,13 @@ SYMBOL *senter(name,type,value)
 }
 
 /* frequire - fetch a token and check it */
-frequire(rtkn)
-  int rtkn;
+void frequire(int rtkn)
 {
     require(token(),rtkn);
 }
 
 /* require - check for a required token */
-require(tkn,rtkn)
-  int tkn,rtkn;
+void require(int tkn, int rtkn)
 {
     char msg[100];
     if (tkn != rtkn) {
@@ -627,8 +618,7 @@ require(tkn,rtkn)
 }
 
 /* save - allocate memory for a string */
-char *save(str)
-  char *str;
+char *save(char *str)
 {
     char *new;
 
@@ -639,20 +629,18 @@ char *save(str)
 }
 
 /* match - compare a string with the current token */
-int match(str)
-  char *str;
+int match(char *str)
 {
     return (strcmp(str,t_token) == 0);
 }
 
 /* fail - print an error message and exit */
-fail(msg)
-  char *msg;
+void fail(char *msg)
 {
     printf("%s\n",msg);
 #ifdef MAC
     macpause();
 #endif
-    exit();
+    exit(EXIT_FAILURE);
 }
 

@@ -1,6 +1,6 @@
  #Makefile for adventure system
 CC=cc
-CFLAGS=-g
+CFLAGS=-g -Wall -Wextra
 ADVLIB=/cmu/misc/cl0x/lib/adventure
 
 advcom: advcom.h advavl.h advcom.o advfcn.o \

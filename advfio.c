@@ -18,8 +18,7 @@ static char buf[BSIZE];
 static int boff;
 static int fd;
 
-ad_create(name)
-  char *name;
+void ad_create(char *name)
 {
     /* create the file */
     if ((fd = creat(name,0666)) < 0)
@@ -30,22 +29,20 @@ ad_create(name)
     boff = 0;
 }
 
-ad_close()
+void ad_close(void)
 {
     ad_flush();
     close(fd);
 }
 
-ad_putc(ch)
-  int ch;
+void ad_putc(int ch)
 {
     buf[boff++] = ch; ad_foff++;
     if (boff >= BSIZE)
 	ad_flush();
 }
 
-ad_seek(pos)
-  long pos;
+void ad_seek(long pos)
 {
     ad_flush();
     if (lseek(fd,pos,0) != pos)
@@ -53,7 +50,7 @@ ad_seek(pos)
     ad_foff = pos;
 }
 
-ad_flush()
+void ad_flush(void)
 {
     if (boff) {
 	if (write(fd,buf,boff) != boff)

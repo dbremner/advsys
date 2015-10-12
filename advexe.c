@@ -21,8 +21,7 @@ long rseed = 1L;
 extern long time();
 
 /* execute - execute adventure code */
-int execute(code)
-  int code;
+int execute(int code)
 {
     /* setup initial program counter */
     if ((pc = code) == NIL)
@@ -39,7 +38,7 @@ int execute(code)
 }
 
 /* exe_one - execute one instruction */
-exe_one()
+void exe_one(void)
 {
     /* get the opcode */
     opcode = getcbyte(pc); pc++;
@@ -269,7 +268,7 @@ exe_one()
 }
 
 /* getboperand - get data byte */
-int getboperand()
+int getboperand(void)
 {
     int data;
     data = getcbyte(pc); pc += 1;
@@ -277,7 +276,7 @@ int getboperand()
 }
 
 /* getwoperand - get data word */
-int getwoperand()
+int getwoperand(void)
 {
     int data;
     data = getcword(pc); pc += 2;
@@ -285,8 +284,7 @@ int getwoperand()
 }
 
 /* print - print a message */
-print(msg)
-  int msg;
+void print(int msg)
 {
     int ch;
 
@@ -296,8 +294,7 @@ print(msg)
 }
 
 /* pnumber - print a number */
-pnumber(n)
-  int n;
+void pnumber(int n)
 {
     char buf[10];
 
@@ -306,8 +303,7 @@ pnumber(n)
 }
 
 /* getrand - get a random number between 0 and n-1 */
-int getrand(n)
-  int n;
+int getrand(int n)
 {
     long k1;
 
@@ -324,8 +320,7 @@ int getrand(n)
 }
 
 /* setrand - set the random number seed */
-setrand(n)
-  long n;
+void setrand(long n)
 {
     rseed = n;
 }

@@ -27,11 +27,25 @@ extern int def_flag;		/* default action flag value */
 extern int def_mask;		/* default action mask value */
 
 /* external routines */
-extern char *malloc();
-extern char *save();
+extern char *save(char *s);
+void fail(char *msg);
+
+void do_property(int flags);
+void do_noun(void);
+void do_adjective(void);
+void do_function(void);
+void do_method(void);
+void do_verb(void);
+void do_flag(int flag);
+void do_preposition(void);
+void setprop(int prop, int flags, int value);
+void addprop(int prop, int flags, int value);
+void addargument(ARGUMENT **list, char *name);
+void freelist(ARGUMENT *arg);
+
 
 /* do_adventure - handle the <ADVENTURE name version-number> statement */
-do_adventure()
+void do_adventure(void)
 {
     /* get the adventure name */
     frequire(T_IDENTIFIER);
@@ -47,7 +61,7 @@ do_adventure()
 }
 
 /* do_word - enter words of a particular type */
-do_word(type)
+void do_word(int type)
 {
     int tkn;
 
@@ -57,7 +71,7 @@ do_word(type)
 }
 
 /* do_synonym - handle the <SYNONYMS ... > statement */
-do_synonym()
+void do_synonym(void)
 {
     int tkn,wrd;
 
@@ -69,7 +83,7 @@ do_synonym()
 }
 
 /* do_define - handle the <DEFINE ... > statement */
-do_define()
+void do_define(void)
 {
     char name[TKNSIZE+1];
     int tkn;
@@ -86,7 +100,7 @@ do_define()
 }
 
 /* do_variable - handle the <VARIABLE ... > statement */
-do_variable()
+void do_variable(void)
 {
     int tkn;
 
@@ -96,7 +110,7 @@ do_variable()
 }
 
 /* do_defproperty - handle the <PROPERTY ... > statement */
-do_defproperty()
+void do_defproperty(void)
 {
     int tkn;
 
@@ -106,7 +120,7 @@ do_defproperty()
 }
 
 /* do_default - handle the <DEFAULT ... > statement */
-do_default()
+void do_default(void)
 {
     int tkn;
 
@@ -126,8 +140,7 @@ do_default()
 }
 
 /* do_dflag - handle ACTOR, DIRECT-OBJECT, and INDIRECT-OBJECT statements */
-do_dflag(flag)
-  int flag;
+void do_dflag(int flag)
 {
     int tkn;
 
@@ -154,8 +167,7 @@ do_dflag(flag)
 }
 
 /* do_object - handle object (LOCATION,OBJECT,ACTOR) definitions */
-int do_object(cname,class)
-  char *cname; int class;
+int do_object(char *cname, int class)
 {
     int tkn,obj,obase,osize,i,p;
 
@@ -211,7 +223,7 @@ printf("%s ]\n",t_token);
 }
 
 /* do_noun - handle the <NOUN ... > statement */
-do_noun()
+void do_noun(void)
 {
     int tkn,new;
 
@@ -225,7 +237,7 @@ do_noun()
 }
 
 /* do_adjective - handle the <ADJECTIVE ... > statement */
-do_adjective()
+void do_adjective(void)
 {
     int tkn,new;
 
@@ -239,8 +251,7 @@ do_adjective()
 }
 
 /* do_property - handle the <PROPERTY ... > statement */
-do_property(flags)
-  int flags;
+void do_property(int flags)
 {
     int tkn,name,value;
 
@@ -253,7 +264,7 @@ do_property(flags)
 }
 
 /* do_method - handle <METHOD (FUN ...) ... > statement */
-do_method()
+void do_method(void)
 {
     int tkn,name,tcnt;
 
@@ -320,8 +331,7 @@ printf("[ method: %s ]\n",t_token);
 }
 
 /* setprop - set the value of a property */
-setprop(prop,flags,value)
-  int prop,flags,value;
+void setprop(int prop, int flags, int value)
 {
     int i;
 
@@ -335,8 +345,7 @@ setprop(prop,flags,value)
 }
 
 /* addprop - add a property to the current object's property list */
-addprop(prop,flags,value)
-  int prop,flags,value;
+void addprop(int prop, int flags, int value)
 {
     if (nprops >= OPMAX) {
 	printf("too many properties for this object\n");
@@ -348,8 +357,7 @@ addprop(prop,flags,value)
 }
 
 /* do_code - compile code for an expression */
-int do_code(type)
-  char *type;
+int do_code(char *type)
 {
     int adr,tkn;
 
@@ -364,7 +372,7 @@ int do_code(type)
 }
 
 /* do_action - handle <ACTION ... > statement */
-do_action()
+void do_action(void)
 {
     int tkn,act;
 
@@ -403,8 +411,7 @@ printf("[ action: %s ]\n",t_token);
 }
 
 /* do_flag - handle ACTOR, DIRECT-OBJECT, and INDIRECT-OBJECT statements */
-do_flag(flag)
-  int flag;
+void do_flag(int flag)
 {
     int tkn;
 
@@ -431,7 +438,7 @@ do_flag(flag)
 }
 
 /* do_verb - handle the <VERB ... > statement */
-do_verb()
+void do_verb(void)
 {
     int tkn,new,lst;
 
@@ -463,7 +470,7 @@ do_verb()
 }
 
 /* do_preposition - handle the <PREPOSITION ... > statement */
-do_preposition()
+void do_preposition(void)
 {
     int tkn,new;
 
@@ -477,7 +484,7 @@ do_preposition()
 }
 
 /* do_function - handle <DEFINE (FUN ...) ... > statement */
-do_function()
+void do_function(void)
 {
     int tkn,act,tcnt;
 
@@ -530,8 +537,7 @@ printf("[ function: %s ]\n",t_token);
 }
 
 /* addargument - add a formal argument */
-addargument(list,name)
-  ARGUMENT **list; char *name;
+void addargument(ARGUMENT **list, char *name)
 {
     ARGUMENT *arg;
     
@@ -543,8 +549,7 @@ addargument(list,name)
 }
 
 /* freelist - free a list of arguments or temporaries */
-freelist(arg)
-  ARGUMENT *arg;
+void freelist(ARGUMENT *arg)
 {
     ARGUMENT *nxt;
 
@@ -557,8 +562,7 @@ freelist(arg)
 }
 
 /* findarg - find an argument offset */
-int findarg(name)
-  char *name;
+int findarg(char *name)
 {
     ARGUMENT *arg;
     int n;
@@ -570,8 +574,7 @@ int findarg(name)
 }
 
 /* findtmp - find a temporary variable offset */
-int findtmp(name)
-  char *name;
+int findtmp(char *name)
 {
     ARGUMENT *tmp;
     int n;
